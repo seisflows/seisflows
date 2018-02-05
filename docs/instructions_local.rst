@@ -16,7 +16,7 @@ Then set environment variables. If using bash, add the following lines to ``.bas
 2. Load example
 ---------------
 
-After installing SeisFlows, users with accounts on ``tiger.princeton.edu`` can type ``sfexamples`` at the command line to interactively choose an example. Once an example is chosen, a ``parameters.py`` file and ``paths.py`` file will be copied to the current directory.
+After installing SeisFlows, users with accounts on ``chinook.alaska.edu`` can type ``sfexamples`` at the command line to interactively choose an example.  Once an example is chosen, a ``parameters.py`` file and ``paths.py`` file will be copied to the current directory.
 
 
 3. Run example

@@ -27,14 +27,14 @@ if __name__ == '__main__':
     """ Prompts user to select SEISFLOWS example, then sets up working directory
       to run example.
     """
-    if unix.hostname() in ['tiger1', 'tiger2', 'tiger', 'tigergpu']:
-        path = '/home/rmodrak/data'
+    if unix.hostname() in ['chinook']:
+        path = '/u1/uaf/rmodrak/data'
     else:
         path = getpath()
     print ''
 
     # select directory
-    dirs = ['Examples2d', 'Examples3d', 'Examples3dGlobe']
+    dirs = ['2dAcoustic', '2dElastic', '3dElastic']
     dir = unix.select(dirs)
     print ''
 
