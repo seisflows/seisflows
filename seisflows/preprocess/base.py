@@ -304,12 +304,10 @@ class base(object):
             assert PAR.FREQMAX < np.inf
 
         elif PAR.FILTER == 'Lowpass':
-            raise NotImplementedError
             if 'FREQ' not in PAR: raise ParameterError('FREQ')
             assert 0 < PAR.FREQ <= np.inf
 
         elif PAR.FILTER == 'Highpass':
-            raise NotImplementedError
             if 'FREQ' not in PAR: raise ParameterError('FREQ')
             assert 0 <= PAR.FREQ < np.inf
 
