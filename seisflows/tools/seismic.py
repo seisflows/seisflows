@@ -57,6 +57,49 @@ class Container(defaultdict):
         super(Container, self).__init__(lambda: [])
         self.minmax = Minmax()
 
+    def convert(self, func, nproc):
+        """ Applies "on-the-fly" conversion from one set of parameters to
+         another
+
+        :func: converts from one set of parameters to another.
+            Must accept keys and values lists in the old paraemterization
+            and return keys and values lists in the new parameterization.
+            For example,
+
+                func(old_keys, old_vals) -->
+                               (new_keys, new_vals)
+
+                func(['vp,'vs','rho'],[[4.],[[2.3],[2.7]]) -->
+                               (['kappa','mu','rho'],[[24.2],[14.3],[2.7]])
+
+        :nproc: Number domains into which model is divided
+
+        """
+        old_keys = self.keys()
+        for iproc in range(nproc):
+            old_vals = []
+            # collect old values
+            for old_key in old_keys:
+                old_vals += [self[old_key][iproc]]
+
+            # change parameters
+            new = func(old_keys, old_vals)
+            del old_vals
+
+            # add new values
+            for new_key, new_val in new.items():
+                if new_key not in old_keys:
+                    self[new_key] += [new_val]
+
+            for new_key, new_val in new.items():
+                if new_key in old_keys:
+                    self[new_key][iproc] = new_val
+
+        # remove old keys
+        for old_key in old_keys:
+            if old_key not in new.keys():
+                del self[old_key]
+
 
 class Writer(object):
     """ Utility for appending values to text files
@@ -74,9 +117,6 @@ class Writer(object):
         fullfile = join(self.path, filename)
         with open(fullfile, 'a') as f:
             f.write('%e\n' % val)
-
-
-
 
 
 def getpar(key, file='DATA/Par_file', sep='=', cast=str):
