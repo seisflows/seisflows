@@ -58,7 +58,9 @@ class base(object):
                  parameters=solver.parameters)
 
         gradient = solver.load(
-            path+'/'+'kernels/sum', suffix='_kernel')
+            path+'/'+'kernels/sum',
+            parameters=solver.parameters,
+            suffix='_kernel')
 
         # merge into a single vector
         gradient = solver.merge(gradient)
@@ -68,8 +70,10 @@ class base(object):
         gradient *= solver.merge(solver.load(path +'/'+ 'model'))
 
         if PATH.MASK:
-            # to scale the gradient, users can supply "masks" by exactly
-            # mimicking the file format in which models stored
+            # to scale the gradient, users can supply "masks" in exactly
+            # the same file format used for models and gradients; each value of
+            # the gradient is scaled by the corresponding value of the mask in a
+            # point-wise fashion
             mask = solver.merge(solver.load(PATH.MASK))
 
             # while both masking and preconditioning involve scaling the

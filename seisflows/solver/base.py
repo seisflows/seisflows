@@ -66,7 +66,6 @@ class base(object):
         Utilities for combining and smoothing kernels
 
     """
-
     assert 'MATERIALS' in PAR
     assert 'DENSITY' in PAR
 
@@ -512,14 +511,16 @@ class base(object):
             preprocess.writer(d, self.cwd +'/'+ 'traces/adj', filename)
 
 
-    def check_mesh_properties(self, path=None):
+    def check_mesh_properties(self, path=None, parameters=[]):
         if not path:
-            path = PATH.MODEL_INIT
+            path=PATH.MODEL_INIT
         if not exists(path):
             raise Exception
+        if not parameters:
+            parameters=self.parameters
 
         # count slices and grid points
-        key = self.parameters[0]
+        key = parameters[0]
         iproc = 0
         ngll = []
         while True:
