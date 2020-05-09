@@ -108,6 +108,16 @@ class Inversion(Base):
         if "VERBOSE" not in PAR:
             setattr(PAR, "VERBOSE", True)
 
+        # Signifiy if data-synth. or synth.-synth. case
+        if "CASE" not in PAR:
+            raise ParameterError(PAR, "CASE")
+
+        if "RESUME_FROM" not in PAR:
+            setattr(PAR, "RESUME_FROM", None)
+
+        if "STOP_AFTER" not in PAR:
+            setattr(PAR, "STOP_AFTER", None)
+
         # Parameter assertions
         assert 1 <= PAR.BEGIN <= PAR.END
 
@@ -143,27 +153,66 @@ class Inversion(Base):
         """
         !!! This function controls the main workflow !!!
 
+        Overwrites seisflows.workflow.inversion.main.
         Carries out seismic inversion
         """
+        # Make the workflow a list of functions that can be called dynamically
+        flow = [self.initialize,
+                self.evaluate_gradient,
+                self.write_gradient,
+                self.compute_direction,
+                self.line_search,
+                self.finalize,
+                self.clean
+                ]
+
         self.stopwatch("set")
         print(f"BEGINNING WORKFLOW AT {self.stopwatch()}")
-        
-        # One-time intialization of the workflow
         optimize.iter = PAR.BEGIN
-        self.setup()
         print(f"{optimize.iter} <= {PAR.END}")
+
+        # Allow workflow resume from a given mid-workflow location
+        if PAR.RESUME_FROM:
+            self.resume_from(flow)
+        else:
+            # First-time intialization of the workflow
+            self.setup()
 
         # Run the workflow until PAR.END
         while optimize.iter <= PAR.END:
             print(f"ITERATION {optimize.iter}")
-            self.initialize()
-            self.evaluate_gradient()
-            self.compute_direction()
-            self.line_search()
-            self.finalize()
-            self.clean()
-            print(f"finished iteration {optimize.iter} at {self.stopwatch()}\n")
+            for func in flow:
+                func()
+                # Stop the workflow at STOP_AFTER if requested
+                if PAR.STOP_AFTER and func.__name__ == PAR.STOP_AFTER:
+                    print(f"STOP ITERATION {optimize.iter} AT {PAR.STOP_AFTER}")
+                    break
+            print(f"FINISHED ITERATION {optimize.iter} AT {self.stopwatch()}\n")
             optimize.iter += 1
+
+    def resume_from(self, flow):
+        """
+        Resume the workflow from a given function. Unique function
+
+        :type flow: list
+        :param flow: list of functions which comprise the full workflow
+        """
+        # Determine the index that corresponds to the resume function named
+        for i, func in enumerate(flow):
+            if func.__name__ == PAR.RESUME_FROM:
+                resume_idx = i
+                break
+        else:
+            print("PAR.RESUME_FROM does not correspond to any workflow "
+                  "functions. Exiting...")
+            sys.exit(-1)
+        print(f"RESUME ITERATION {optimize.iter} (from function "
+              f"{flow[resume_idx].__name__})")
+
+        for func in flow[resume_idx:]:
+            func()
+        print(f"FINISHED ITERATION {optimize.iter} AT {self.stopwatch()}\n")
+        optimize.iter += 1
 
     def setup(self):
         """
@@ -182,7 +231,7 @@ class Inversion(Base):
             else:
                 print("Generating data")
 
-            print("Running solver", end="... ")
+            print("\tPreparing initial model", end="... ")
             self.stopwatch("set")
             system.run("solver", "setup")
             self.stopwatch("time")
@@ -192,10 +241,19 @@ class Inversion(Base):
         Generates synthetics via a forward simulation, calculates misfits
         for the forward simulation. Writes misfit for use in optimization.
         """
-        self.write_model(path=PATH.GRAD, suffix="new")
+        print("INITIALIZE")
+        suffix_ = "new"
+        path_ = PATH.GRAD
 
-        print("Generating synthetics")
-        system.run("solver", "eval_func", path=PATH.GRAD)
+        self.write_model(path=path_, suffix=suffix_)
+
+        print("\tRunning forward simulation", end="... ")
+        self.stopwatch("set")
+        system.run("solver", "eval_fwd", path=path_)
+        self.stopwatch("time")
+
+        print("\tQuantifying misfit", end="... ")
+        preprocess.
 
         self.write_misfit(suffix="new")
 
